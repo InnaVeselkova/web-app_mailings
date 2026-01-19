@@ -1,14 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход</title>
-    <link rel="stylesheet" href="{% static 'users/css/styles.css' %}">
 </head>
 <body>
     <div class="container">
-        <h2>Login</h2>
+        <h2>Вход в профиль</h2>
         {% if error %}
             <div class="error">
                 <p>{{ error }}</p>
@@ -16,11 +15,11 @@
         {% endif %}
         <form method="POST">
             {% csrf_token %}
-            <label for="email">Email:</label>
+            <label for="email">Адрес электронной почты:</label>
             <input type="email" name="email" required>
-            <label for="password">Password:</label>
+            <label for="password">Пароль:</label>
             <input type="password" name="password" required>
-            <button type="submit">Login</button>
+            <button type="submit">Войти</button>
         </form>
         <p>У вас еще нет аккаунта? <a href="{% url 'users:register' %}">Регистрация</a>.</p>
     </div>

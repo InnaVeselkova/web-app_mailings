@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет</title>
+    <link rel="stylesheet" href="{% static 'users/css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h2>Личный кабинет</h2>
+        <p>Добро пожаловать в приложение для рассылок!</p> <!-- Дисплей email пользователя -->
+
+        <a href="{% url 'users:logout' %}">Выход</a> <!-- Ссылка для выхода -->
+    </div>
+</body>
+</html>

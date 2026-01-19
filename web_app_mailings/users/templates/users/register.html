@@ -1,0 +1,26 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link rel="stylesheet" href="{% static 'users/css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h2>Register</h2>
+        {% if form.errors %}
+            <div class="error">
+                <p>Please correct the errors below:</p>
+                {{ form.errors }}
+            </div>
+        {% endif %}
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }} <!-- Отображение формы -->
+            <button type="submit">Register</button>
+        </form>
+        <p>У вас уже есть аккаунт? <a href="{% url 'users:login' %}">Вход в профиль</a>.</p>
+    </div>
+</body>
+</html>

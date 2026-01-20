@@ -1,0 +1,15 @@
+{% extends 'mailings/base.html' %}
+
+{% block title %}Все сообщения{% endblock %}
+
+{% block content %}
+    <h2>Список сообщений</h2>
+    <a class="btn btn-primary" href="{% url 'mailings:message_create' %}" role="button">Добавить новое сообщение</a>
+    <ul>
+        {% for message in object_list %}
+            <li>
+                <a href="{% url 'mailings:message_detail' message.pk %}">{{ message.subject }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

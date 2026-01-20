@@ -1,0 +1,26 @@
+{% extends 'mailings/base.html' %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<h1>Добро пожаловать в приложение для рассылок!</h1>
+<p>Здесь вы можете управлять своими рассылками.</p>
+<div class="container mt-5">
+        <h2>Статистика рассылок</h2>
+        <a class="btn btn-primary" href="{% url 'mailings:mailing_create' %}" role="button">Добавить новую рассылку</a>
+
+    <div>
+        <h4>Общее количество рассылок: {{ total_mailings }}</h4>
+        <h4>Количество активных рассылок: {{ active_mailings }}</h4>
+    </div>
+
+    <ul>
+        {% for mailing in object_list %}
+            <li>
+                <a href="{% url 'mailings:mailing_detail' mailing.pk %}">{{ mailing.status }}</a>
+                <a href="{% url 'mailings:initiate_mailing' mailing.id %}">Запустить рассылку</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

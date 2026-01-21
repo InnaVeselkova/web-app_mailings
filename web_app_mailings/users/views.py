@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from .forms import UserRegisterForm
+from mailings.models import Mailing, Attempt
+
 
 # Функция для регистрации нового пользователя
 def register(request):
@@ -8,7 +10,7 @@ def register(request):
         form = UserRegisterForm(request.POST)
         if form.is_valid():
             form.save()  # Сохраняем нового пользователя
-            return redirect('login')  # Перенаправляем на страницу входа
+            return redirect('mailings:home')
     else:
         form = UserRegisterForm()
     return render(request, 'users/register.html', {'form': form})
@@ -23,7 +25,7 @@ def login_view(request):
             if user.is_blocked:
                 return render(request, 'users/login.html', {'error': 'This account has been blocked.'})
             login(request, user)  # Успешный вход
-            return redirect('users:profile')  # Предполагаем, что у вас есть URL для профиля
+            return redirect('mailings:home')
         else:
             return render(request, 'users/login.html', {'error': 'Invalid email or password.'})
 
@@ -31,4 +33,24 @@ def login_view(request):
 
 # Функция для отображения профиля
 def profile(request):
-    return render(request, 'users/profile.html')
+    user = request.user
+    mailings = Mailing.objects.filter(owner=user)
+
+    # Получаем все попытки этого пользователя
+    attempts = Attempt.objects.filter(owner=user)
+
+    total_attempts = attempts.count()
+    success_attempts = attempts.filter(status='Успешно').count()
+    failed_attempts = attempts.filter(status='Не успешно').count()
+
+    # Количество отправленных сообщений — это успешные попытки
+    sent_messages = success_attempts
+
+    context = {
+        'mailings': mailings,
+        'total_attempts': total_attempts,
+        'success_attempts': success_attempts,
+        'failed_attempts': failed_attempts,
+        'sent_messages': sent_messages,
+    }
+    return render(request, 'users/profile.html', context)

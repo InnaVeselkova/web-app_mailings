@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход</title>
-</head>
-<body>
+{% extends 'mailings/base.html' %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
     <div class="container">
         <h2>Вход в профиль</h2>
         {% if error %}
@@ -23,5 +20,4 @@
         </form>
         <p>У вас еще нет аккаунта? <a href="{% url 'users:register' %}">Регистрация</a>.</p>
     </div>
-</body>
-</html>
+{% endblock %}

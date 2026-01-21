@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -9,7 +10,7 @@ from .forms import MailingForm, RecipientForm, MessageForm
 from .utils import initiate_sending_mailing
 
 
-class HomeListView(ListView):
+class HomeListView(LoginRequiredMixin, ListView):
     model = Mailing
     template_name = 'mailings/home.html'
 
@@ -19,6 +20,9 @@ class HomeListView(ListView):
 
         # Общее количество всех созданных рассылок
         total_mailings = Mailing.objects.count()
+
+        # Общее количество всех получателей
+        total_recipients = Recipient.objects.filter(mailing__isnull=False).distinct().count()
 
         # Количество активных рассылок
         now = timezone.now()
@@ -31,6 +35,7 @@ class HomeListView(ListView):
         # Добавляем данные в контекст
         context['total_mailings'] = total_mailings
         context['active_mailings'] = active_mailings
+        context['total_recipients'] = total_recipients
 
         return context
 
@@ -77,7 +82,7 @@ class MailingDeleteView(DeleteView):
     success_url = reverse_lazy('mailings:home')
 
 
-class RecipientListView(ListView):
+class RecipientListView(LoginRequiredMixin, ListView):
     model = Recipient
     template_name = 'mailings/recipient_list.html'
 
@@ -112,7 +117,7 @@ class RecipientDeleteView(DeleteView):
     success_url = reverse_lazy('mailings:recipient_list')
 
 
-class MessageListView(ListView):
+class MessageListView(LoginRequiredMixin, ListView):
     model = Message
     template_name = 'mailings/message_list.html'
 
@@ -150,10 +155,9 @@ class MessageDeleteView(DeleteView):
 class InitiateMailingView(View):
     def get(self, request, mailing_id):
         mailing = get_object_or_404(Mailing, id=mailing_id)  # Получаем рассылку по ID
-        success = initiate_sending_mailing(mailing)  # Вызываем функцию отправки
+        success = initiate_sending_mailing(mailing, request.user)
 
         if success:
-            return HttpResponse("Рассылка успешно инициирована.")  # Успешное сообщение
+            return HttpResponse("Рассылка успешно инициирована.")
         else:
             return HttpResponse("Ошибка: Текущее время вне диапазона рассылки.")
-

@@ -1,3 +1,4 @@
+import pytz
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -57,8 +58,9 @@ class Mailing(models.Model):
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Владелец')
 
     def update_status(self):
-        """Обновляет статус рассылки в зависимости от текущего времени."""
-        now = timezone.now()
+        """Обновляет статус рассылки в зависимости от текущего московского времени."""
+        moscow_tz = pytz.timezone('Europe/Moscow')
+        now = timezone.now().astimezone(moscow_tz)
         new_status = self.status
 
         if self.start_time > now:
@@ -68,10 +70,13 @@ class Mailing(models.Model):
         else:
             new_status = 'Завершена'
 
-        # Если статус изменился, сохраняем его в базе данных.
+        # Если статус изменился, сохраняем его
         if self.status != new_status:
             self.status = new_status
-            self.save(update_fields=['status'])
+
+    def save(self, *args, **kwargs):
+        self.update_status()
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Валидация на уровне модели."""

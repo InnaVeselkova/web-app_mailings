@@ -1,16 +1,33 @@
-<!DOCTYPE html>
-<html lang=ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Личный кабинет</title>
-</head>
-<body>
+{% extends 'mailings/base.html' %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
     <div class="container">
         <h2>Личный кабинет</h2>
-        <p>Добро пожаловать в приложение для рассылок!</p> <!-- Дисплей email пользователя -->
-
-        <a href="{% url 'users:logout' %}">Выход</a> <!-- Ссылка для выхода -->
-    </div>
-</body>
-</html>
+        <h4>Статистика рассылок:</h4>
+    <ul>
+        <li>Общее количество попыток: {{ total_attempts }}</li>
+        <li>Успешных попыток: {{ success_attempts }}</li>
+        <li>Неуспешных попыток: {{ failed_attempts }}</li>
+        <li>Отправленных сообщений: {{ sent_messages }}</li>
+    </ul>
+        <p>Управление рассылками</p>
+    <ul>
+        {% for mailing in mailings %}
+            <li>
+                <strong>Статус:</strong> {{ mailing.status }}<br>
+                <strong>Дата начала:</strong> {{ mailing.start_time|date:"d.m.Y H:i" }}<br>
+                <strong>Дата окончания:</strong> {{ mailing.end_time|date:"d.m.Y H:i" }}<br>
+                <strong>Получатели:</strong> {{ mailing.recipients.count }}<br>
+                <a href="{% url 'mailings:mailing_detail' mailing.pk %}">Подробнее</a>
+                {% if mailing.status != 'Запущена' %}
+                    <a href="{% url 'mailings:initiate_mailing' mailing.pk %}">Запустить рассылку</a>
+                {% else %}
+                    <em>Рассылка уже запущена</em>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

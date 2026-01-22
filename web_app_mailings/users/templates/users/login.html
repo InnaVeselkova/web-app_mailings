@@ -19,5 +19,6 @@
             <button type="submit">Войти</button>
         </form>
         <p>У вас еще нет аккаунта? <a href="{% url 'users:register' %}">Регистрация</a>.</p>
+        <p>Забыли пароль? <a href="{% url 'users:password_reset' %}">Восстановить пароль</a></p>
     </div>
 {% endblock %}

@@ -1,5 +1,10 @@
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.views import PasswordResetView
+from django.core.mail import send_mail
 from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
+from django.views.decorators.http import require_POST
+
 from .forms import UserRegisterForm
 from mailings.models import Mailing, Attempt
 
@@ -28,8 +33,12 @@ def login_view(request):
             return redirect('mailings:home')
         else:
             return render(request, 'users/login.html', {'error': 'Invalid email or password.'})
-
     return render(request, 'users/login.html')  # Отображение формы входа
+
+@require_POST
+def user_logout(request):
+    logout(request)
+    return redirect('users/login.html')
 
 # Функция для отображения профиля
 def profile(request):
@@ -54,3 +63,10 @@ def profile(request):
         'sent_messages': sent_messages,
     }
     return render(request, 'users/profile.html', context)
+
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'users/password_reset_form.html'
+    email_template_name = 'users/password_reset_email.html'
+    subject_template_name = 'users/password_reset_subject.txt'
+    success_url = reverse_lazy('users:password_reset_done')

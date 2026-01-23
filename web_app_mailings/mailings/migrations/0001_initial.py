@@ -75,9 +75,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "attempt_time",
-                    models.DateTimeField(
-                        auto_now_add=True, verbose_name="Дата и время попытки"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="Дата и время попытки"),
                 ),
                 (
                     "status",
@@ -168,9 +166,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "email",
-                    models.EmailField(
-                        max_length=254, unique=True, verbose_name="Email"
-                    ),
+                    models.EmailField(max_length=254, unique=True, verbose_name="Email"),
                 ),
                 ("full_name", models.CharField(max_length=255, verbose_name="Ф.И.О.")),
                 (
@@ -194,8 +190,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="mailing",
             name="recipients",
-            field=models.ManyToManyField(
-                to="mailings.recipient", verbose_name="Получатели"
-            ),
+            field=models.ManyToManyField(to="mailings.recipient", verbose_name="Получатели"),
         ),
     ]

@@ -1,4 +1,4 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -10,9 +10,23 @@ from .forms import MailingForm, RecipientForm, MessageForm
 from .utils import initiate_sending_mailing
 
 
+class OwnerOrManagerMixin(UserPassesTestMixin):
+    def test_func(self):
+        obj = self.get_object()
+        user = self.request.user
+        # Проверка, что пользователь — владелец или менеджер
+        return user.is_superuser or user.is_staff or obj.owner == user
+
+
+class OwnerOnlyMixin:
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(owner=self.request.user)
+
+
 class HomeListView(LoginRequiredMixin, ListView):
     model = Mailing
-    template_name = 'mailings/home.html'
+    template_name = "mailings/home.html"
 
     def get_context_data(self, **kwargs):
         # Сначала вызываем метод родительского класса
@@ -26,23 +40,19 @@ class HomeListView(LoginRequiredMixin, ListView):
 
         # Количество активных рассылок
         now = timezone.now()
-        active_mailings = Mailing.objects.filter(
-            start_time__lte=now,
-            end_time__gte=now,
-            status='Запущена'
-        ).count()
+        active_mailings = Mailing.objects.filter(start_time__lte=now, end_time__gte=now, status="Запущена").count()
 
         # Добавляем данные в контекст
-        context['total_mailings'] = total_mailings
-        context['active_mailings'] = active_mailings
-        context['total_recipients'] = total_recipients
+        context["total_mailings"] = total_mailings
+        context["active_mailings"] = active_mailings
+        context["total_recipients"] = total_recipients
 
         return context
 
 
-class MailingDetailView(DetailView):
+class MailingDetailView(OwnerOrManagerMixin, DetailView):
     model = Mailing
-    template_name = 'mailings/mailing_detail.html'
+    template_name = "mailings/mailing_detail.html"
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
@@ -50,53 +60,67 @@ class MailingDetailView(DetailView):
         return obj
 
 
-class MailingCreateView(CreateView):
-    def get(self, request):
-        # Отображаем пустую форму при GET-запросе
-        form = MailingForm()
-        return render(request, 'mailings/mailing_form.html', {'form': form})
-
-    def post(self, request):
-        form = MailingForm(request.POST)
-
-        if form.is_valid():
-            mailing = form.save(commit=False)  # Сохраняем рассылку, но не в базе данных
-            mailing.owner = request.user  # Устанавливаем владельца
-            mailing.save()  # Теперь сохраняем экземпляр в базу данных
-            mailing.recipients.set(form.cleaned_data['recipients'])  # Устанавливаем получателей
-            return redirect('mailings:home')
-
-        return render(request, 'mailings/mailing_form.html', {'form': form})
-
-
-class MailingUpdateView(UpdateView):
+class MailingCreateView(OwnerOnlyMixin, CreateView):
     model = Mailing
     form_class = MailingForm
-    template_name = 'mailings/mailing_form.html'
-    success_url = reverse_lazy('mailings:home')
+    template_name = "mailings/mailing_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def get(self, request, *args, **kwargs):
+        form = self.get_form()
+        return render(request, "mailings/mailing_form.html", {"form": form})
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            mailing = form.save(commit=False)
+            mailing.owner = request.user
+            mailing.save()
+            mailing.recipients.set(form.cleaned_data["recipients"])
+            return redirect("mailings:home")
+        return render(request, "mailings/mailing_form.html", {"form": form})
 
 
-class MailingDeleteView(DeleteView):
+class MailingUpdateView(OwnerOnlyMixin, UpdateView):
     model = Mailing
-    template_name = 'mailings/mailing_confirm_delete.html'
-    success_url = reverse_lazy('mailings:home')
+    form_class = MailingForm
+    template_name = "mailings/mailing_form.html"
+    success_url = reverse_lazy("mailings:home")
+
+
+class MailingDeleteView(OwnerOnlyMixin, DeleteView):
+    model = Mailing
+    template_name = "mailings/mailing_confirm_delete.html"
+    success_url = reverse_lazy("mailings:home")
 
 
 class RecipientListView(LoginRequiredMixin, ListView):
     model = Recipient
-    template_name = 'mailings/recipient_list.html'
+    template_name = "mailings/recipient_list.html"
+
+    def get_queryset(self):
+        user = self.request.user
+        # Менеджеры видят всех
+        if user.is_superuser or user.is_staff:
+            return Recipient.objects.all()
+        # Обычные пользователи — только свои
+        return Recipient.objects.filter(owner=user)
 
 
-class RecipientDetailView(DetailView):
+class RecipientDetailView(OwnerOrManagerMixin, DetailView):
     model = Recipient
-    template_name = 'mailings/recipient_detail.html'
+    template_name = "mailings/recipient_detail.html"
 
 
-class RecipientCreateView(CreateView):
+class RecipientCreateView(OwnerOnlyMixin, CreateView):
     model = Recipient
     form_class = RecipientForm
-    template_name = 'mailings/recipient_form.html'
-    success_url = reverse_lazy('mailings:recipient_list')
+    template_name = "mailings/recipient_form.html"
+    success_url = reverse_lazy("mailings:recipient_list")
 
     def form_valid(self, form):
         recipient = form.save(commit=False)  # Создаем объект, но не сохраняем
@@ -104,34 +128,43 @@ class RecipientCreateView(CreateView):
         recipient.save()  # Теперь сохраняем объект в базе данных
         return super().form_valid(form)
 
-class RecipientUpdateView(UpdateView):
+
+class RecipientUpdateView(OwnerOnlyMixin, UpdateView):
     model = Recipient
     form_class = RecipientForm
-    template_name = 'mailings/recipient_form.html'
-    success_url = reverse_lazy('mailings:recipient_list')
+    template_name = "mailings/recipient_form.html"
+    success_url = reverse_lazy("mailings:recipient_list")
 
 
-class RecipientDeleteView(DeleteView):
+class RecipientDeleteView(OwnerOnlyMixin, DeleteView):
     model = Recipient
-    template_name = 'mailings/recipient_confirm_delete.html'
-    success_url = reverse_lazy('mailings:recipient_list')
+    template_name = "mailings/recipient_confirm_delete.html"
+    success_url = reverse_lazy("mailings:recipient_list")
 
 
 class MessageListView(LoginRequiredMixin, ListView):
     model = Message
-    template_name = 'mailings/message_list.html'
+    template_name = "mailings/message_list.html"
+
+    def get_queryset(self):
+        user = self.request.user
+        # Менеджеры видят всех
+        if user.is_superuser or user.is_staff:
+            return Message.objects.all()
+        # Обычные пользователи — только свои
+        return Message.objects.filter(owner=user)
 
 
-class MessageDetailView(DetailView):
+class MessageDetailView(OwnerOrManagerMixin, DetailView):
     model = Message
-    template_name = 'mailings/message_detail.html'
+    template_name = "mailings/message_detail.html"
 
 
-class MessageCreateView(CreateView):
+class MessageCreateView(OwnerOnlyMixin, CreateView):
     model = Message
     form_class = MessageForm
-    template_name = 'mailings/message_form.html'
-    success_url = reverse_lazy('mailings:message_list')
+    template_name = "mailings/message_form.html"
+    success_url = reverse_lazy("mailings:message_list")
 
     def form_valid(self, form):
         message = form.save(commit=False)  # Создаем объект, но не сохраняем
@@ -139,20 +172,24 @@ class MessageCreateView(CreateView):
         message.save()  # Теперь сохраняем объект в базе данных
         return super().form_valid(form)
 
-class MessageUpdateView(UpdateView):
+
+class MessageUpdateView(OwnerOnlyMixin, UpdateView):
     model = Message
     form_class = MessageForm
-    template_name = 'mailings/message_form.html'
-    success_url = reverse_lazy('mailings:message_list')
+    template_name = "mailings/message_form.html"
+    success_url = reverse_lazy("mailings:message_list")
 
 
-class MessageDeleteView(DeleteView):
+class MessageDeleteView(OwnerOnlyMixin, DeleteView):
     model = Message
-    template_name = 'mailings/message_confirm_delete.html'
-    success_url = reverse_lazy('mailings:message_list')
+    template_name = "mailings/message_confirm_delete.html"
+    success_url = reverse_lazy("mailings:message_list")
 
 
-class InitiateMailingView(View):
+class InitiateMailingView(
+    View,
+    OwnerOrManagerMixin,
+):
     def get(self, request, mailing_id):
         mailing = get_object_or_404(Mailing, id=mailing_id)  # Получаем рассылку по ID
         success = initiate_sending_mailing(mailing, request.user)

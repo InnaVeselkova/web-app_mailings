@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -8,6 +9,8 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from .models import Mailing, Recipient, Message
 from .forms import MailingForm, RecipientForm, MessageForm
 from .utils import initiate_sending_mailing
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
 
 class OwnerOrManagerMixin(UserPassesTestMixin):
@@ -50,6 +53,7 @@ class HomeListView(LoginRequiredMixin, ListView):
         return context
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class MailingDetailView(OwnerOrManagerMixin, DetailView):
     model = Mailing
     template_name = "mailings/mailing_detail.html"
@@ -98,19 +102,25 @@ class MailingDeleteView(OwnerOnlyMixin, DeleteView):
     success_url = reverse_lazy("mailings:home")
 
 
+
 class RecipientListView(LoginRequiredMixin, ListView):
     model = Recipient
     template_name = "mailings/recipient_list.html"
 
     def get_queryset(self):
         user = self.request.user
-        # Менеджеры видят всех
-        if user.is_superuser or user.is_staff:
-            return Recipient.objects.all()
-        # Обычные пользователи — только свои
-        return Recipient.objects.filter(owner=user)
+        cache_key = f'recipients_user_{user.id}'
+        queryset = cache.get(cache_key)
+        if queryset is None:
+            if user.is_superuser or user.is_staff:
+                queryset = list(Recipient.objects.all())
+            else:
+                queryset = list(Recipient.objects.filter(owner=user))
+            cache.set(cache_key, queryset, 300)  # кешировать 5 минут
+        return queryset
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class RecipientDetailView(OwnerOrManagerMixin, DetailView):
     model = Recipient
     template_name = "mailings/recipient_detail.html"
@@ -142,6 +152,7 @@ class RecipientDeleteView(OwnerOnlyMixin, DeleteView):
     success_url = reverse_lazy("mailings:recipient_list")
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class MessageListView(LoginRequiredMixin, ListView):
     model = Message
     template_name = "mailings/message_list.html"
@@ -155,6 +166,7 @@ class MessageListView(LoginRequiredMixin, ListView):
         return Message.objects.filter(owner=user)
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class MessageDetailView(OwnerOrManagerMixin, DetailView):
     model = Message
     template_name = "mailings/message_detail.html"

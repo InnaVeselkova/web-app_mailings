@@ -1,0 +1,25 @@
+{% extends 'mailings/base.html' %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<h1>Добро пожаловать в приложение для рассылок!</h1>
+<p>Здесь вы можете управлять своими рассылками.</p>
+{% if user.is_authenticated %}
+    <!-- Контент для авторизированных пользователей -->
+    <div class="container mt-5">
+        <h2>Мои рассылки</h2>
+        <a class="btn btn-primary" href="{% url 'mailings:mailing_create' %}" role="button">Добавить новую рассылку</a>
+
+        <div>
+            <h4>Общее количество рассылок: {{ total_mailings }}</h4>
+            <h4>Общее количество активных рассылок: {{ active_mailings }}</h4>
+            <h4>Общее количество получателей: {{ total_recipients }}</h4>
+        </div>
+    </div>
+{% else %}
+    <!-- Форма входа для неавторизированных пользователей -->
+    {% include 'users/login.html' %}
+{% endif %}
+
+{% endblock %}

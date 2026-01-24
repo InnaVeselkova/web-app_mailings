@@ -1,0 +1,21 @@
+{% extends 'mailings/base.html' %}
+
+{% block title %}Мой профиль{% endblock %}
+
+{% block content %}
+
+<h1>Профиль пользователя</h1>
+<p><strong>Имя:</strong> {{ user.username }}</p>
+<p><strong>Email:</strong> {{ user.email }}</p>
+<p><strong>Телефон:</strong> {{ user.phone_number }}</p>
+{% if avatar_url %}
+    <p><img src="{{ avatar_url }}" alt="Аватар" width="150"></p>
+{% endif %}
+<p><strong>Страна:</strong> {{ country }}</p>
+
+<!-- Кнопка для перехода к редактированию -->
+<p>
+    <a href="{% url 'users:profile_edit' %}">Редактировать профиль</a>
+</p>
+
+{% endblock %}

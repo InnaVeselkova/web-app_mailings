@@ -1,0 +1,23 @@
+{% extends 'mailings/base.html' %}
+
+{% block title %}Содержание рассылки{% endblock %}
+
+{% block content %}
+    <p>Период: {{ mailing.start_time }} - {{ mailing.end_time }} </p>
+    <p>Статус: {{ mailing.status }}</p>
+    <p>Сообщение: {{ mailing.message }}</p>
+    <p><strong>Получатели:</strong>
+    {% if mailing.recipients.exists %}
+        <ul>
+            {% for recipient in mailing.recipients.all %}
+                <li>{{ recipient.full_name }} ({{ recipient.email }})</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        Нет получателей.
+    {% endif %}
+</p>
+    <a href="{% url 'mailings:mailing_update' mailing.pk %}">Редактировать</a>
+    <a href="{% url 'mailings:mailing_delete' mailing.pk %}">Удалить</a>
+    <a href="{% url 'mailings:home' %}">Назад к списку</a>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'mailings/base.html' %}
+
+{% block title %}Удаление получателя{% endblock %}
+
+{% block content %}
+<h4>Вы уверены, что хотите удалить "{{ recipient.full_name }}"?</h4>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Удалить</button>
+    </form>
+    <a href="{% url 'mailings:recipient_list' %}">Отмена</a>
+{% endblock %}

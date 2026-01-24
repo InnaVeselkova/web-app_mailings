@@ -19,11 +19,15 @@
                     <a class="nav-link active" aria-current="page" href="{% url 'users:profile' %}">Мой профиль</a>
                     </li>
                     <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="{% url 'users:all_mailings' %}">Мои рассылки</a>
+                    </li>
+                    <li class="nav-item">
                     <a class="nav-link active" aria-current="page" href="{% url 'mailings:recipient_list' %}">Все получатели</a>
                     </li>
                     <li class="nav-item">
                     <a class="nav-link active" href="{% url 'mailings:message_list' %}">Все сообщения</a>
                     </li>
+
                     <li class="nav-item">
                         {% if user.is_authenticated %}
                         <a href="{% url 'users:logout' %}"

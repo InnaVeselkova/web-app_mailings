@@ -1,5 +1,5 @@
 import logging
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import EmailMessage
 from django.utils import timezone
 from django.conf import settings
 from .models import Attempt

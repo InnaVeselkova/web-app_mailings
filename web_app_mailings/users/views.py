@@ -1,12 +1,16 @@
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import PasswordResetView
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-
+from django.views import View
+from django.views.generic import UpdateView, ListView
 
 from .forms import UserRegisterForm
 from mailings.models import Mailing, Attempt
+
+from .models import CustomUser
 
 
 # Функция для регистрации нового пользователя
@@ -39,28 +43,45 @@ def login_view(request):
 
 
 # Функция для отображения профиля
-def profile(request):
-    user = request.user
-    mailings = Mailing.objects.filter(owner=user)
+class UserMailingsView(LoginRequiredMixin, ListView):
+    model = Mailing
+    template_name = "users/st_mailings.html"
+    context_object_name = "mailings"
 
-    # Получаем все попытки этого пользователя
-    attempts = Attempt.objects.filter(owner=user)
+    def get_queryset(self):
+        return Mailing.objects.filter(owner=self.request.user)
 
-    total_attempts = attempts.count()
-    success_attempts = attempts.filter(status="Успешно").count()
-    failed_attempts = attempts.filter(status="Не успешно").count()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        attempts = Attempt.objects.filter(owner=user)
 
-    # Количество отправленных сообщений — это успешные попытки
-    sent_messages = success_attempts
+        context["total_attempts"] = attempts.count()
+        context["success_attempts"] = attempts.filter(status="Успешно").count()
+        context["failed_attempts"] = attempts.filter(status="Не успешно").count()
+        context["sent_messages"] = context["success_attempts"]
+        return context
 
-    context = {
-        "mailings": mailings,
-        "total_attempts": total_attempts,
-        "success_attempts": success_attempts,
-        "failed_attempts": failed_attempts,
-        "sent_messages": sent_messages,
-    }
-    return render(request, "users/profile.html", context)
+
+class ProfileView(LoginRequiredMixin, View):
+    def get(self, request):
+        user = request.user
+        context = {
+            "user": user,
+            "avatar_url": user.avatar.url if user.avatar else None,
+            "country": user.country.name if user.country else None,
+        }
+        return render(request, "users/profile.html", context)
+
+
+class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = CustomUser
+    fields = ["username", "email", "phone_number", "avatar", "country"]
+    template_name = "users/profile_edit.html"
+    success_url = reverse_lazy("users:profile")
+
+    def get_object(self, queryset=None):
+        return self.request.user
 
 
 class CustomPasswordResetView(PasswordResetView):

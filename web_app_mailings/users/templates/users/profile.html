@@ -1,33 +1,21 @@
 {% extends 'mailings/base.html' %}
 
-{% block title %}Личный кабинет{% endblock %}
+{% block title %}Мой профиль{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2>Личный кабинет</h2>
-        <h4>Статистика рассылок:</h4>
-    <ul>
-        <li>Общее количество попыток: {{ total_attempts }}</li>
-        <li>Успешных попыток: {{ success_attempts }}</li>
-        <li>Неуспешных попыток: {{ failed_attempts }}</li>
-        <li>Отправленных сообщений: {{ sent_messages }}</li>
-    </ul>
-        <p>Управление рассылками</p>
-    <ul>
-        {% for mailing in mailings %}
-            <li>
-                <strong>Статус:</strong> {{ mailing.status }}<br>
-                <strong>Дата начала:</strong> {{ mailing.start_time|date:"d.m.Y H:i" }}<br>
-                <strong>Дата окончания:</strong> {{ mailing.end_time|date:"d.m.Y H:i" }}<br>
-                <strong>Получатели:</strong> {{ mailing.recipients.count }}<br>
-                <a href="{% url 'mailings:mailing_detail' mailing.pk %}">Подробнее</a>
-                {% if mailing.status != 'Запущена' %}
-                    <a href="{% url 'mailings:initiate_mailing' mailing.pk %}">Запустить рассылку</a>
-                {% else %}
-                    <em>Рассылка уже запущена</em>
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
-</div>
+
+<h1>Профиль пользователя</h1>
+<p><strong>Имя:</strong> {{ user.username }}</p>
+<p><strong>Email:</strong> {{ user.email }}</p>
+<p><strong>Телефон:</strong> {{ user.phone_number }}</p>
+{% if avatar_url %}
+    <p><img src="{{ avatar_url }}" alt="Аватар" width="150"></p>
+{% endif %}
+<p><strong>Страна:</strong> {{ country }}</p>
+
+<!-- Кнопка для перехода к редактированию -->
+<p>
+    <a href="{% url 'users:profile_edit' %}">Редактировать профиль</a>
+</p>
+
 {% endblock %}

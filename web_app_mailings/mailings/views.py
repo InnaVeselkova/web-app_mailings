@@ -53,7 +53,7 @@ class HomeListView(LoginRequiredMixin, ListView):
         return context
 
 
-@method_decorator(cache_page(60 * 15), name='dispatch')
+@method_decorator(cache_page(60 * 15), name="dispatch")
 class MailingDetailView(OwnerOrManagerMixin, DetailView):
     model = Mailing
     template_name = "mailings/mailing_detail.html"
@@ -102,14 +102,13 @@ class MailingDeleteView(OwnerOnlyMixin, DeleteView):
     success_url = reverse_lazy("mailings:home")
 
 
-
 class RecipientListView(LoginRequiredMixin, ListView):
     model = Recipient
     template_name = "mailings/recipient_list.html"
 
     def get_queryset(self):
         user = self.request.user
-        cache_key = f'recipients_user_{user.id}'
+        cache_key = f"recipients_user_{user.id}"
         queryset = cache.get(cache_key)
         if queryset is None:
             if user.is_superuser or user.is_staff:
@@ -120,7 +119,7 @@ class RecipientListView(LoginRequiredMixin, ListView):
         return queryset
 
 
-@method_decorator(cache_page(60 * 15), name='dispatch')
+@method_decorator(cache_page(60 * 15), name="dispatch")
 class RecipientDetailView(OwnerOrManagerMixin, DetailView):
     model = Recipient
     template_name = "mailings/recipient_detail.html"
@@ -152,7 +151,7 @@ class RecipientDeleteView(OwnerOnlyMixin, DeleteView):
     success_url = reverse_lazy("mailings:recipient_list")
 
 
-@method_decorator(cache_page(60 * 15), name='dispatch')
+@method_decorator(cache_page(60 * 15), name="dispatch")
 class MessageListView(LoginRequiredMixin, ListView):
     model = Message
     template_name = "mailings/message_list.html"
@@ -166,7 +165,7 @@ class MessageListView(LoginRequiredMixin, ListView):
         return Message.objects.filter(owner=user)
 
 
-@method_decorator(cache_page(60 * 15), name='dispatch')
+@method_decorator(cache_page(60 * 15), name="dispatch")
 class MessageDetailView(OwnerOrManagerMixin, DetailView):
     model = Message
     template_name = "mailings/message_detail.html"
@@ -198,10 +197,7 @@ class MessageDeleteView(OwnerOnlyMixin, DeleteView):
     success_url = reverse_lazy("mailings:message_list")
 
 
-class InitiateMailingView(
-    View,
-    OwnerOrManagerMixin,
-):
+class InitiateMailingView(View, OwnerOrManagerMixin):
     def get(self, request, mailing_id):
         mailing = get_object_or_404(Mailing, id=mailing_id)  # Получаем рассылку по ID
         success = initiate_sending_mailing(mailing, request.user)
